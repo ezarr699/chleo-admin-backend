@@ -37,7 +37,7 @@ return [
 
     /**
      * chleo-backend's central Tenant Management API. Called server-to-server
-     * via Modules\TenantManagement\Repositories\TenantApiRepository — the
+     * via App\Modules\TenantManagement\Repositories\TenantApiRepository — the
      * management_token is never exposed to the browser.
      */
     'chleo' => [

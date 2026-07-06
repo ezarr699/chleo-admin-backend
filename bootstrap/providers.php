@@ -4,9 +4,9 @@ use App\Providers\AppServiceProvider;
 
 $moduleProviders = [];
 
-foreach (glob(dirname(__DIR__).'/Modules/*/*ServiceProvider.php') as $file) {
+foreach (glob(dirname(__DIR__).'/app/Modules/*/*ServiceProvider.php') as $file) {
     $module = basename(dirname($file));
-    $moduleProviders[] = "Modules\\{$module}\\{$module}ServiceProvider";
+    $moduleProviders[] = "App\\Modules\\{$module}\\{$module}ServiceProvider";
 }
 
 return [

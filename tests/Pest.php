@@ -20,10 +20,10 @@ pest()->extend(TestCase::class)
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in(...glob(__DIR__.'/../Modules/*/Tests/Feature'));
+    ->in(...glob(__DIR__.'/../app/Modules/*/Tests/Feature'));
 
 pest()->extend(TestCase::class)
-    ->in(...glob(__DIR__.'/../Modules/*/Tests/Unit'));
+    ->in(...glob(__DIR__.'/../app/Modules/*/Tests/Unit'));
 
 /*
 |--------------------------------------------------------------------------

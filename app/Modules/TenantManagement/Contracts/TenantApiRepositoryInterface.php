@@ -35,6 +35,14 @@ interface TenantApiRepositoryInterface
 
     public function delete(string $id): void;
 
+    public function restore(string $id): void;
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $payload): array;
+
     /** @return array<string, mixed> */
     public function addDomain(string $tenantId, string $domain): array;
 

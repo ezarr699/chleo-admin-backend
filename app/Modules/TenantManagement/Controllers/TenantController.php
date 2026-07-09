@@ -6,9 +6,8 @@
  * @file        TenantController.php
  * @path        app/Modules/TenantManagement/Controllers/TenantController.php
  * @description Handle HTTP request manajemen tenant: list, detail, buat,
- *              suspend/resume, hapus, statistik. Hanya proxy tipis ke
- *              TenantManagementService (yang memanggil chleo-backend).
- * @author      [Nama Developer]
+ *              suspend/resume, hapus, statistik, dan log. Hanya proxy
+ *              tipis ke TenantManagementService.
  * @since       v1.0.0
  * ============================================================
  */
@@ -19,6 +18,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Modules\TenantManagement\Requests\StoreTenantRequest;
+use App\Modules\TenantManagement\Requests\UpdateTenantRequest;
 use App\Modules\TenantManagement\Requests\UpdateTenantSuspensionRequest;
 use App\Modules\TenantManagement\Services\TenantManagementService;
 
@@ -36,8 +36,8 @@ final class TenantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Daftar tenant berhasil diambil.',
-            'data' => $result['data'],
-            'meta' => $result['meta'],
+            'data'    => $result['data'],
+            'meta'    => $result['meta'],
         ]);
     }
 
@@ -46,12 +46,13 @@ final class TenantController extends Controller
         $tenant = $this->tenantManagementService->create(
             $request->string('slug')->toString(),
             $request->array('admin'),
+            $request->user(),    // rekam siapa yang membuat
         );
 
         return response()->json([
             'success' => true,
             'message' => 'Tenant berhasil dibuat.',
-            'data' => $tenant,
+            'data'    => $tenant,
         ], 201);
     }
 
@@ -60,7 +61,7 @@ final class TenantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail tenant berhasil diambil.',
-            'data' => $this->tenantManagementService->find($id),
+            'data'    => $this->tenantManagementService->find($id),
         ]);
     }
 
@@ -84,7 +85,32 @@ final class TenantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tenant berhasil dihapus.',
-            'data' => null,
+            'data'    => null,
+        ]);
+    }
+
+    public function restore(string $id): JsonResponse
+    {
+        $this->tenantManagementService->restore($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tenant berhasil dipulihkan.',
+            'data'    => null,
+        ]);
+    }
+
+    public function updateDetails(UpdateTenantRequest $request, string $id): JsonResponse
+    {
+        $tenant = $this->tenantManagementService->updateTenant(
+            $id,
+            ['admin' => $request->array('admin')]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail tenant berhasil diperbarui.',
+            'data'    => $tenant,
         ]);
     }
 
@@ -93,7 +119,49 @@ final class TenantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Statistik tenant berhasil diambil.',
-            'data' => $this->tenantManagementService->stats(),
+            'data'    => $this->tenantManagementService->stats(),
+        ]);
+    }
+
+    /**
+     * GET /tenants/logs
+     * Query params: per_page, sort (asc|desc), status (aktif|ditangguhkan|deleted)
+     */
+    public function logs(Request $request): JsonResponse
+    {
+        $perPage   = (int) $request->integer('per_page', 15);
+        $sortOrder = $request->string('sort', 'desc')->lower()->toString();
+        $sortOrder = in_array($sortOrder, ['asc', 'desc'], true) ? $sortOrder : 'desc';
+        $status    = $request->filled('status') ? $request->string('status')->toString() : null;
+
+        $paginator = $this->tenantManagementService->logs($perPage, $sortOrder, $status);
+
+        $items = collect($paginator->items())->map(fn($log) => [
+            'id'                   => $log->id,
+            'tenant_id'            => $log->tenant_id,
+            'subdomain'            => $log->subdomain,
+            'admin_name'           => $log->admin_name,
+            'admin_email'          => $log->admin_email,
+            'admin_password_masked'=> $log->admin_password_masked,
+            'created_by'           => $log->createdBy ? [
+                'id'    => $log->createdBy->id,
+                'name'  => $log->createdBy->name,
+                'email' => $log->createdBy->email,
+            ] : null,
+            'status'               => $log->status,
+            'created_at'           => $log->created_at?->toIso8601String(),
+        ])->all();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Log tenant berhasil diambil.',
+            'data'    => $items,
+            'meta'    => [
+                'current_page' => $paginator->currentPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+                'last_page'    => $paginator->lastPage(),
+            ],
         ]);
     }
 }

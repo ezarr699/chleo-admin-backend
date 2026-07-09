@@ -82,6 +82,26 @@ final class TenantApiRepository implements TenantApiRepositoryInterface
         $this->throwIfFailed($response, $id);
     }
 
+    public function restore(string $id): void
+    {
+        $response = $this->client()->post("tenants/{$id}/restore");
+
+        $this->throwIfFailed($response, $id);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $payload): array
+    {
+        $response = $this->client()->put("tenants/{$id}", $payload);
+
+        $this->throwIfFailed($response, $id);
+
+        return $response->json('data');
+    }
+
     /** @return array<string, mixed> */
     public function addDomain(string $tenantId, string $domain): array
     {
